@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Claim</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #004d40, #00e5ff); /* Градиентный фон */
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      font-size: 36px;
+      margin-top: 50px;
+    }
+
+    p {
+      color: white;
+      text-align: center;
+    }
+
+    #minedTokens {
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+    }
+
+    #claimContainer {
+      border: none;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      text-align: center;
+      background: linear-gradient(135deg, #000000, #141414);
+    }
+
+    button {
+      background-color: transparent;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 15px 0;
+      font-size: 18px;
+      cursor: pointer;
+      transition: transform 0.3s;
+      margin-top: 20px;
+      background-image: linear-gradient(135deg, #004d40, #00e5ff);
+      width: 200px;
+    }
+
+    button:hover {
+      transform: scale(0.9);
+    }
+
+    #storageIcon {
+      width: 30px;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+
+    #connectButton {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(rgb(87, 87, 87), rgb(0, 0, 0));
+    }
+
+    #boostMenu {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 20px;
+      background-color: black;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    .boostButton {
+      margin-top: 10px;
+      padding: 10px 20px;
+      width: 200px;
+      border-radius: 5px;
+      background-color: #004d40;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    .boostButton:hover {
+      transform: scale(1.05);
+    }
+  </style>
+  <script>
+    var miningInterval;
+    var tokensPerSecond = 0.2 / (25 * 3600);
+    var boostMultipliers = [1, 1.5, 2.5, 3];
+    var boostPrices = [0, 2, 10, 30];
+
+    function startMining() {
+      var minedTokens = parseFloat(localStorage.getItem('minedTokens')) || 0;
+
+      miningInterval = setInterval(function() {
+        minedTokens += tokensPerSecond;
+        localStorage.setItem('minedTokens', minedTokens);
+        document.getElementById('minedTokens').innerText = minedTokens.toFixed(6);
+
+
+        if (minedTokens >= 0.2) {
+          document.getElementById('claimButton').disabled = false;
+        }
+      }, 1000);
+    }
+
+    function stopMining() {
+      clearInterval(miningInterval);
+    }
+
+    function claimTokens() {
+      var minedTokens = parseFloat(localStorage.getItem('minedTokens')) || 0;
+      var claimedTokens = parseFloat(localStorage.getItem('claimedTokens')) || 0;
+
+      if (minedTokens > 0) {
+        claimedTokens += minedTokens;
+        localStorage.setItem('claimedTokens', claimedTokens);
+        localStorage.setItem('minedTokens', 0);
+        document.getElementById('claimedTokens').innerText = claimedTokens.toFixed(6);
+        document.getElementById('minedTokens').innerText = "0.000000";
+        document.getElementById('claimButton').disabled = true;
+        alert("Токены успешно заклеймены!");
+      } else {
+        alert("Недостаточно токенов для клейма.");
+      }
+    }
+
+    function buyBoost(boostIndex) {
+      var storedTokens = parseFloat(localStorage.getItem('minedTokens')) || 0;
+      var boostPrice = boostPrices[boostIndex];
+      if (storedTokens >= boostPrice) {
+        storedTokens -= boostPrice;
+        localStorage.setItem('minedTokens', storedTokens);
+        tokensPerSecond *= boostMultipliers[boostIndex];
+        alert("Буст успешно куплен! Скорость майнинга увеличена.");
+      } else {
+        alert("Недостаточно токенов для покупки буста.");
+      }
+    }
+
+    window.onload = function() {
+      startMining();
+    };
+
+    async function checkMetaMask() {
+
+      if (window.ethereum) {
+        try {
+
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          const account = accounts[0];
+          document.getElementById('connectButton').innerText = account;
+        } catch (error) {
+
+          alert("Access to your MetaMask account is required to proceed.");
+        }
+      } else {
+
+        alert("MetaMask extension is not detected. Please install MetaMask to proceed.");
+      }
+    }
+  </script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+<h1>$FTR mining</h1>
+<div id="claimContainer">
+  <button id="claimButton" onclick="claimTokens()">Claim</button>
+  <p>Storage: <span id="minedTokens">0.000000</span></p>
+  <p>Your $FTR (Future) tokens: <span id="claimedTokens">0.000000</span></p>
+</div>
+<button id="connectButton" onclick="checkMetaMask()">Connect with MetaMask</button>
+<div id="boostMenu">
+  <button class="boostButton" onclick="buyBoost(1)">Buy Boost 1 (x1.5)</button>
+  <button class="boostButton" onclick="buyBoost(2)">Buy Boost 2 (x2.5)</button>
+  <button class="boostButton" onclick="buyBoost(3)">Buy Boost 3 (x3)</button>
+</div>
+</body>
+</html>
